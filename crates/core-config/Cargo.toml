@@ -5,3 +5,8 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+
+[dependencies]
+core-store = { path = "../core-store" }
+serde = { workspace = true }
+thiserror = { workspace = true }
