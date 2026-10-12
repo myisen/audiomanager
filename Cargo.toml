@@ -44,3 +44,17 @@ async-trait = "0.1"
 
 # 路径处理
 camino = { version = "1", features = ["serde1"] }
+
+# 音频解码（Q14: Symphonia，MPL-2.0 许可，与 MIT 分发兼容）
+# T21 验证：Symphonia 0.5 支持 mp3/aac/flac/ogg/vorbis/m4a/wav；
+# 不支持 opus/ape/wv/mka（方案 A：纳入库但标记不可播放）
+symphonia = { version = "0.5", default-features = false, features = [
+    "isomp4",
+    "aac",
+    "mp3",
+    "flac",
+    "ogg",
+    "vorbis",
+    "wav",
+    "pcm",
+] }

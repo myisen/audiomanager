@@ -5,3 +5,9 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+
+[dependencies]
+core-playlist = { path = "../core-playlist" }
+core-position = { path = "../core-position" }
+symphonia = { workspace = true }
+thiserror = { workspace = true }
