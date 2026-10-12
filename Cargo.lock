@@ -137,6 +137,13 @@ dependencies = [
 [[package]]
 name = "core-share"
 version = "0.1.0"
+dependencies = [
+ "core-playlist",
+ "core-transfer",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
 
 [[package]]
 name = "core-store"
