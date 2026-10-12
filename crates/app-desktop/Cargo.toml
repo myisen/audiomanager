@@ -1,0 +1,14 @@
+[package]
+name = "app-desktop"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# Tauri 桌面应用（M8 实现时启用）
+# [dependencies]
+# tauri = { version = "1", features = ["custom-protocol"] }
+# serde = { workspace = true }
+# serde_json = { workspace = true }
+# core-ipc = { path = "../core-ipc" }
