@@ -20,6 +20,12 @@ dependencies = [
 [[package]]
 name = "app-daemon"
 version = "0.1.0"
+dependencies = [
+ "core-ipc",
+ "serde",
+ "serde_json",
+ "thiserror",
+]
 
 [[package]]
 name = "app-desktop"
@@ -101,6 +107,11 @@ dependencies = [
 [[package]]
 name = "core-ipc"
 version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror",
+]
 
 [[package]]
 name = "core-library"
