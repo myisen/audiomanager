@@ -1,0 +1,46 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/core-store",
+    "crates/core-log",
+    "crates/core-library",
+    "crates/core-playlist",
+    "crates/core-player",
+    "crates/core-position",
+    "crates/core-cast",
+    "crates/core-transfer",
+    "crates/core-metadata",
+    "crates/core-share",
+    "crates/core-config",
+    "crates/core-ipc",
+    "crates/app-daemon",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.92"
+license = "MIT"
+repository = "https://github.com/audiosync/audio-manager"
+
+[workspace.dependencies]
+# 日志
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# 序列化
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# 错误处理
+thiserror = "1"
+
+# 异步
+tokio = { version = "1", features = ["full"] }
+
+# 文件系统增强
+tokio-util = "0.7"
+async-trait = "0.1"
+
+# 路径处理
+camino = { version = "1", features = ["serde1"] }

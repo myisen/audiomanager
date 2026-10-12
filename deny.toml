@@ -1,0 +1,56 @@
+[graph]
+all-features = true
+
+# 许可策略（FR-10）：
+# - 自身代码：MIT
+# - 依赖许可必须与 MIT 分发兼容
+# - 不允许 GPL / AGPL 等强传染性许可的依赖进入主进程
+# - LGPL 依赖需通过独立进程隔离（如 Chromaprint），不允许静态链接
+#
+# cargo-deny 0.20 变更：
+# - 「deny」字段已移除，仅 allow 列表中的许可被允许，其余一律拒绝
+# - 「unlicensed」字段已移除，无许可的 crate 默认报错，需用 clarify 显式声明
+[licenses]
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "MPL-2.0",
+    "CC0-1.0",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "Zlib",
+    "OpenSSL",
+    "0BSD",
+]
+confidence-threshold = 0.8
+# 未使用的允许许可只警告，不阻断（避免白名单中的备用许可导致检查失败）
+unused-allowed-license = "warn"
+
+# LGPL 类依赖需通过独立进程隔离，不允许静态链接到主进程。
+# 此类依赖需在 exceptions 中显式声明 [crate, license]，并在 PR/代码审查中确认其隔离方式。
+# 示例：{ crate = "chromaprint-sys", allow = ["LGPL-2.1-only"] }
+exceptions = []
+
+# 工作区内部私有 crate 不做许可检查
+[licenses.private]
+ignore = true
+
+# 禁止未在依赖声明中列出的私有 crate 被引入
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+
+# 安全漏洞检查
+# vulnerability / unsound / notice 在 0.20 中默认全部 emit error，无需显式配置
+[advisories]
+yanked = "deny"
+# unmaintained / unsound 为作用域：all | workspace | transitive | none
+# workspace 表示仅当未维护/不健全的 crate 是工作区直接依赖时才失败
+unmaintained = "workspace"
+unsound = "workspace"
+unused-ignored-advisory = "warn"
