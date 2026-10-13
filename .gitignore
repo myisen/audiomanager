@@ -8,6 +8,8 @@
 app-android/app/build/
 app-android/.gradle/
 app-android/local.properties
+app-android/app/src/main/jniLibs/*/libaudiosync_core.so
+crates/app-desktop/gen/
 
 # Editor
 .idea/

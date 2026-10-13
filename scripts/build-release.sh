@@ -48,20 +48,43 @@ build_linux() {
 
 build_windows() {
     info "Windows 构建（交叉编译 x86_64-pc-windows-gnu）"
-    "$ROOT/scripts/build-windows.sh" "$ROOT/$OUT/windows-x86_64"
-    attach_compliance "$OUT/windows-x86_64"
-    info "Windows 完成: $OUT/windows-x86_64"
+    cargo build --release --target x86_64-pc-windows-gnu -p app-daemon -p app-desktop
+
+    local dir="$OUT/windows-x86_64"
+    rm -rf "$dir" && mkdir -p "$dir"
+
+    cp target/x86_64-pc-windows-gnu/release/audiosync.exe "$dir/audiosync-daemon.exe"
+    if [ -f target/x86_64-pc-windows-gnu/release/audiosync-desktop.exe ]; then
+        cp target/x86_64-pc-windows-gnu/release/audiosync-desktop.exe "$dir/"
+    fi
+
+    attach_compliance "$dir"
+    info "Windows 完成: $dir"
 }
 
 build_android() {
     info "Android 构建（arm64-v8a / x86_64）"
-    "$ROOT/scripts/build-android.sh"
+    # 1) Rust 核心 .so（需 ANDROID_NDK_HOME）
+    if [ -n "${ANDROID_NDK_HOME:-}" ] || command -v cargo-ndk >/dev/null 2>&1; then
+        cargo ndk -t arm64-v8a -t x86_64 -o app-android/app/src/main/jniLibs build --release -p core-jni
+    else
+        echo "警告：未检测到 NDK/cargo-ndk，跳过 .so 构建"
+    fi
+    # 2) Gradle 打包（需 ANDROID_HOME + JDK17+）
+    if command -v gradle >/dev/null 2>&1; then
+        (cd app-android && gradle assembleRelease bundleRelease)
+    fi
+
     local dir="$OUT/android"
     rm -rf "$dir" && mkdir -p "$dir"
     find "$ROOT/app-android/app/build/outputs" -type f \( -name "*.apk" -o -name "*.aab" \) \
         -exec cp {} "$dir/" \; 2>/dev/null || true
+    # 无论 APK 是否产出，附上 JNI 库与合规文件
+    if [ -d "$ROOT/app-android/app/src/main/jniLibs/arm64-v8a" ]; then
+        mkdir -p "$dir/jniLibs" && cp -r "$ROOT/app-android/app/src/main/jniLibs/"* "$dir/jniLibs/"
+    fi
     if [ -z "$(ls -A "$dir" 2>/dev/null)" ]; then
-        echo "提示：未找到 APK/AAB，请先安装 Android SDK 后执行 ./gradlew assembleRelease bundleRelease"
+        echo "提示：未找到 APK/AAB，请先安装 Android SDK 后执行 gradle assembleRelease bundleRelease"
     fi
     attach_compliance "$dir"
     info "Android 完成: $dir"

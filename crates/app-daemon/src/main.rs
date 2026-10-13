@@ -1,7 +1,7 @@
-//! app-daemon: Linux 无头服务（FR-08）
+//! app-daemon: 无头服务（FR-08）
 //!
-//! 提供守护进程形态、单实例检测、Unix Socket 控制通道、
-//! 无音频设备降级、非 root 运行校验。
+//! 提供守护进程形态、单实例检测、控制通道（Unix: Unix Socket / Windows:
+//! TCP localhost + 端口文件）、无音频设备降级、非 root 运行校验。
 
 use core_ipc::{
     deserialize_request, deserialize_response, serialize_request, serialize_response, IpcRequest,
@@ -9,11 +9,143 @@ use core_ipc::{
 };
 use std::fs;
 use std::io::{BufRead, BufReader, Write};
-use std::os::unix::net::{UnixListener, UnixStream};
 use std::path::PathBuf;
 use std::process::exit;
 use std::sync::{Arc, Mutex};
 use std::thread;
+
+// ===== 跨平台 IPC 传输层 =====
+
+#[cfg(unix)]
+mod transport {
+    use super::*;
+    use std::os::unix::net::{UnixListener, UnixStream};
+
+    pub type IpcListener = UnixListener;
+    pub type IpcStream = UnixStream;
+
+    /// 默认 Socket 路径
+    pub fn endpoint_path() -> PathBuf {
+        let uid = std::env::var("UID")
+            .ok()
+            .and_then(|s| s.parse::<u32>().ok())
+            .unwrap_or(1000);
+        let runtime_dir =
+            std::env::var("XDG_RUNTIME_DIR").unwrap_or_else(|_| format!("/tmp/runtime-{}", uid));
+        PathBuf::from(runtime_dir).join("audiosync.sock")
+    }
+
+    /// 绑定控制通道；若已有实例存活则返回错误（单实例检测）
+    pub fn bind_instance() -> Result<(IpcListener, String), String> {
+        let socket = endpoint_path();
+        if let Some(parent) = socket.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+        if socket.exists() {
+            // 尝试连接以判断是否已有实例
+            if UnixStream::connect(&socket).is_ok() {
+                return Err("已有 audiosync 实例运行".into());
+            }
+            let _ = fs::remove_file(&socket);
+        }
+        let listener =
+            UnixListener::bind(&socket).map_err(|e| format!("绑定 Socket 失败: {}", e))?;
+        Ok((listener, socket.display().to_string()))
+    }
+
+    /// 客户端连接守护进程
+    pub fn connect_daemon() -> Result<IpcStream, String> {
+        let socket = endpoint_path();
+        UnixStream::connect(&socket).map_err(|e| format!("无法连接守护进程: {}", e))
+    }
+
+    /// 服务器退出清理
+    pub fn cleanup_instance() {
+        let _ = fs::remove_file(endpoint_path());
+    }
+
+    /// 检查当前用户是否为 root
+    pub fn is_running_as_root() -> bool {
+        let uid = std::env::var("UID")
+            .ok()
+            .and_then(|s| s.parse::<u32>().ok())
+            .unwrap_or(1000);
+        uid == 0
+    }
+}
+
+#[cfg(windows)]
+mod transport {
+    use super::*;
+    use std::net::{TcpListener, TcpStream};
+
+    pub type IpcListener = TcpListener;
+    pub type IpcStream = TcpStream;
+
+    /// 默认控制端口（TCP localhost）
+    const DEFAULT_PORT: u16 = 45123;
+
+    /// 端口记录文件：%LOCALAPPDATA%\AudioSync\daemon.port
+    pub fn port_file() -> PathBuf {
+        let base = std::env::var("LOCALAPPDATA")
+            .or_else(|_| std::env::var("APPDATA"))
+            .unwrap_or_else(|_| std::env::temp_dir().display().to_string());
+        PathBuf::from(base).join("AudioSync").join("daemon.port")
+    }
+
+    fn read_port() -> u16 {
+        fs::read_to_string(port_file())
+            .ok()
+            .and_then(|s| s.trim().parse().ok())
+            .unwrap_or(DEFAULT_PORT)
+    }
+
+    /// 绑定控制通道；若已有实例存活则返回错误（单实例检测）
+    ///
+    /// Windows 侧使用固定端口的 TCP 绑定排他性实现单实例；
+    /// 端口写入 %LOCALAPPDATA%\AudioSync\daemon.port 供客户端发现。
+    pub fn bind_instance() -> Result<(IpcListener, String), String> {
+        // 先探测：能连接说明已有实例
+        let port = read_port();
+        if TcpStream::connect(("127.0.0.1", port)).is_ok() {
+            return Err("已有 audiosync 实例运行".into());
+        }
+
+        let listener = TcpListener::bind(("127.0.0.1", port))
+            .map_err(|e| format!("绑定端口 {} 失败（可能被其他程序占用）: {}", port, e))?;
+        let addr = listener.local_addr().map_err(|e| e.to_string())?;
+
+        // 记录实际端口
+        let file = port_file();
+        if let Some(parent) = file.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+        let _ = fs::write(&file, addr.port().to_string());
+
+        Ok((listener, format!("127.0.0.1:{}", addr.port())))
+    }
+
+    /// 客户端连接守护进程
+    pub fn connect_daemon() -> Result<IpcStream, String> {
+        let port = read_port();
+        TcpStream::connect(("127.0.0.1", port))
+            .map_err(|e| format!("无法连接守护进程（127.0.0.1:{}）: {}", port, e))
+    }
+
+    /// 服务器退出清理
+    pub fn cleanup_instance() {
+        let _ = fs::remove_file(port_file());
+    }
+
+    /// Windows 无 root 概念
+    pub fn is_running_as_root() -> bool {
+        false
+    }
+}
+
+use transport::{
+    bind_instance, cleanup_instance, connect_daemon, is_running_as_root, IpcListener, IpcStream,
+};
 
 /// 守护进程内部状态
 #[derive(Debug, Clone)]
@@ -45,43 +177,6 @@ impl Default for DaemonState {
             transfers: Vec::new(),
         }
     }
-}
-
-/// 默认 Socket 路径
-fn socket_path() -> PathBuf {
-    let runtime_dir = std::env::var("XDG_RUNTIME_DIR")
-        .unwrap_or_else(|_| format!("/tmp/runtime-{}", unsafe { libc_getuid() }));
-    PathBuf::from(runtime_dir).join("audiosync.sock")
-}
-
-unsafe fn libc_getuid() -> u32 {
-    // 不引入 libc crate，使用环境变量回退
-    std::env::var("UID")
-        .ok()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(1000)
-}
-
-// ===== 单实例检测 =====
-
-/// 尝试绑定 Unix Socket，若失败说明已有实例运行
-fn try_acquire_instance_lock(socket: &PathBuf) -> Result<UnixListener, String> {
-    // 清理陈旧的 socket 文件
-    if socket.exists() {
-        // 尝试连接以判断是否已有实例
-        if UnixStream::connect(socket).is_ok() {
-            return Err("已有 audiosync 实例运行".into());
-        }
-        let _ = fs::remove_file(socket);
-    }
-    UnixListener::bind(socket).map_err(|e| format!("绑定 Socket 失败: {}", e))
-}
-
-// ===== 非 root 校验 =====
-
-/// 检查当前用户是否为 root
-fn is_running_as_root() -> bool {
-    unsafe { libc_getuid() == 0 }
 }
 
 // ===== 请求处理 =====
@@ -181,7 +276,7 @@ fn handle_request(req: IpcRequest, state: &Arc<Mutex<DaemonState>>) -> IpcRespon
 
 // ===== 服务器 =====
 
-fn run_server(listener: UnixListener, state: Arc<Mutex<DaemonState>>) {
+fn run_server(listener: IpcListener, state: Arc<Mutex<DaemonState>>) {
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
@@ -197,7 +292,7 @@ fn run_server(listener: UnixListener, state: Arc<Mutex<DaemonState>>) {
     }
 }
 
-fn handle_client(stream: UnixStream, state: &Arc<Mutex<DaemonState>>) {
+fn handle_client(stream: IpcStream, state: &Arc<Mutex<DaemonState>>) {
     let mut reader = BufReader::new(stream.try_clone().unwrap());
     let mut writer = stream;
 
@@ -240,9 +335,7 @@ fn handle_client(stream: UnixStream, state: &Arc<Mutex<DaemonState>>) {
 // ===== CLI 客户端 =====
 
 fn send_request(req: &IpcRequest) -> Result<IpcResponse, String> {
-    let socket = socket_path();
-    let mut stream =
-        UnixStream::connect(&socket).map_err(|e| format!("无法连接守护进程: {}", e))?;
+    let mut stream = connect_daemon()?;
     let req_json = serialize_request(req).map_err(|e| e.to_string())?;
     writeln!(stream, "{}", req_json).map_err(|e| e.to_string())?;
 
@@ -422,32 +515,30 @@ fn run_daemon() {
 
     println!("[audiosync] 启动守护进程...");
 
-    let socket = socket_path();
-
-    // T71: 单实例检测
-    let listener = match try_acquire_instance_lock(&socket) {
-        Ok(l) => l,
+    // T71: 单实例检测 + 绑定控制通道
+    let (listener, endpoint) = match bind_instance() {
+        Ok(v) => v,
         Err(e) => {
             eprintln!("[audiosync] {}", e);
             exit(1);
         }
     };
 
-    println!("[audiosync] Socket 监听: {}", socket.display());
+    println!("[audiosync] 控制通道监听: {}", endpoint);
 
     let state = Arc::new(Mutex::new(DaemonState::default()));
 
     // T74: 结构化日志（示例）
     eprintln!(
-        "[audiosync] {{\"event\":\"daemon_started\",\"pid\":{},\"socket\":\"{}\"}}",
+        "[audiosync] {{\"event\":\"daemon_started\",\"pid\":{},\"endpoint\":\"{}\"}}",
         std::process::id(),
-        socket.display()
+        endpoint
     );
 
     run_server(listener, state);
 
-    // 清理 socket 文件
-    let _ = fs::remove_file(&socket);
+    // 清理 endpoint（socket 文件 / 端口文件）
+    cleanup_instance();
     println!("[audiosync] 已退出。");
 }
 
@@ -470,11 +561,12 @@ mod tests {
         assert!(!is_running_as_root() || std::env::var("UID").unwrap_or_default() == "0");
     }
 
+    #[cfg(unix)]
     #[test]
-    fn socket_path_uses_xdg_runtime() {
-        std::env::set_var("XDG_RUNTIME_DIR", "/tmp/test-runtime");
-        let path = socket_path();
-        assert_eq!(path.to_string_lossy(), "/tmp/test-runtime/audiosync.sock");
+    fn socket_path_ends_with_sock() {
+        // 不设置环境变量（避免与并发测试竞态），仅验证文件名
+        let path = transport::endpoint_path();
+        assert!(path.ends_with("audiosync.sock"));
     }
 
     #[test]
@@ -565,13 +657,9 @@ mod tests {
     }
 
     #[test]
-    fn ipc_roundtrip_via_socket() {
-        // 创建临时 socket
-        let dir = std::env::temp_dir();
-        let socket = dir.join(format!("audiosync-test-{}.sock", std::process::id()));
-        let _ = fs::remove_file(&socket);
-
-        let listener = UnixListener::bind(&socket).unwrap();
+    fn ipc_roundtrip_via_endpoint() {
+        // 使用 transport 抽象绑定与连接（Unix Socket / Windows TCP 自动适配）
+        let (listener, _endpoint) = transport::bind_instance().expect("绑定控制通道");
         let state = Arc::new(Mutex::new(DaemonState {
             is_playing: true,
             volume: 0.5,
@@ -579,7 +667,7 @@ mod tests {
         }));
 
         // 客户端连接
-        let client_stream = UnixStream::connect(&socket).unwrap();
+        let client_stream = transport::connect_daemon().expect("客户端连接");
 
         // 主线程 accept（避免线程调度竞态）
         let (server_stream, _) = listener.accept().unwrap();
@@ -614,6 +702,6 @@ mod tests {
         // drop reader 关闭客户端连接，服务器 read_line 返回 EOF
         drop(reader);
         handle.join().unwrap();
-        let _ = fs::remove_file(&socket);
+        transport::cleanup_instance();
     }
 }
