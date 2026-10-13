@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AudioSync</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- 侧边栏 -->
+    <aside class="sidebar">
+      <div class="logo">
+        <span class="logo-icon">♪</span>
+        <span class="logo-text">AudioSync</span>
+      </div>
+      <nav class="nav">
+        <button class="nav-item active" data-page="library">
+          <span class="nav-icon">📚</span><span>音乐库</span>
+        </button>
+        <button class="nav-item" data-page="player">
+          <span class="nav-icon">▶</span><span>播放器</span>
+        </button>
+        <button class="nav-item" data-page="devices">
+          <span class="nav-icon">📡</span><span>设备与传输</span>
+        </button>
+        <button class="nav-item" data-page="metadata">
+          <span class="nav-icon">🏷</span><span>元数据</span>
+        </button>
+        <button class="nav-item" data-page="settings">
+          <span class="nav-icon">⚙</span><span>设置</span>
+        </button>
+      </nav>
+    </aside>
+
+    <!-- 主内容 -->
+    <main class="main">
+      <!-- 音乐库 -->
+      <section class="page active" id="page-library">
+        <header class="page-header">
+          <h1>音乐库</h1>
+          <button class="btn primary" id="btn-rescan">重新扫描</button>
+        </header>
+        <div class="playlist-list" id="playlist-list">
+          <div class="empty">暂无清单，请在设置中添加音乐库目录</div>
+        </div>
+      </section>
+
+      <!-- 播放器 -->
+      <section class="page" id="page-player">
+        <header class="page-header">
+          <h1>播放器</h1>
+        </header>
+        <div class="player">
+          <div class="now-playing">
+            <div class="track-title" id="track-title">未选择曲目</div>
+            <div class="track-artist" id="track-artist">—</div>
+          </div>
+          <div class="progress">
+            <span class="time" id="time-current">0:00</span>
+            <input type="range" id="seek-bar" min="0" max="100" value="0" step="0.1" />
+            <span class="time" id="time-total">0:00</span>
+          </div>
+          <div class="controls">
+            <button class="ctrl-btn" id="btn-prev">⏮</button>
+            <button class="ctrl-btn play" id="btn-play">▶</button>
+            <button class="ctrl-btn" id="btn-next">⏭</button>
+            <div class="volume">
+              <span>🔊</span>
+              <input type="range" id="volume-bar" min="0" max="100" value="100" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 设备与传输 -->
+      <section class="page" id="page-devices">
+        <header class="page-header">
+          <h1>设备与传输</h1>
+          <button class="btn primary" id="btn-scan-devices">扫描设备</button>
+        </header>
+        <div class="two-col">
+          <div class="col">
+            <h2>已配对设备</h2>
+            <div class="device-list" id="device-list">
+              <div class="empty">暂无已配对设备</div>
+            </div>
+          </div>
+          <div class="col">
+            <h2>传输任务</h2>
+            <div class="transfer-list" id="transfer-list">
+              <div class="empty">暂无传输任务</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 元数据 -->
+      <section class="page" id="page-metadata">
+        <header class="page-header">
+          <h1>元数据同步</h1>
+          <button class="btn primary" id="btn-sync-meta">开始同步</button>
+        </header>
+        <div class="meta-status" id="meta-status">
+          <p>元数据同步将从内嵌标签、MusicBrainz、Last.fm 等来源获取信息。</p>
+          <p>冲突字段将进入待确认列表，由你逐字段裁决。</p>
+        </div>
+        <div class="conflict-list" id="conflict-list"></div>
+      </section>
+
+      <!-- 设置 -->
+      <section class="page" id="page-settings">
+        <header class="page-header">
+          <h1>设置</h1>
+        </header>
+        <div class="settings">
+          <div class="setting-group">
+            <h2>音频库</h2>
+            <div class="setting-row">
+              <label>音乐库目录</label>
+              <div class="dir-list" id="dir-list"></div>
+              <div class="dir-add">
+                <input type="text" id="new-dir" placeholder="/path/to/music" />
+                <button class="btn" id="btn-add-dir">添加</button>
+              </div>
+            </div>
+            <div class="setting-row">
+              <label><input type="checkbox" id="recursive-scan" /> 递归扫描子目录</label>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <h2>播放</h2>
+            <div class="setting-row">
+              <label>循环模式</label>
+              <select id="loop-mode">
+                <option value="off">关闭</option>
+                <option value="all">全部循环</option>
+                <option value="one">单曲循环</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <label><input type="checkbox" id="resume-enabled" /> 启用续播</label>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <h2>传输</h2>
+            <div class="setting-row">
+              <label>接收目录</label>
+              <input type="text" id="receive-dir" />
+            </div>
+            <div class="setting-row">
+              <label><input type="checkbox" id="preserve-structure" /> 还原来源目录结构</label>
+            </div>
+            <div class="setting-row">
+              <label>最大并发传输数</label>
+              <input type="number" id="max-concurrent" min="1" max="20" />
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <h2>元数据</h2>
+            <div class="setting-row">
+              <label><input type="checkbox" id="external-meta" /> 启用在线元数据源</label>
+            </div>
+            <div class="setting-row">
+              <label><input type="checkbox" id="write-back" /> 将修正写回原文件标签</label>
+            </div>
+          </div>
+
+          <div class="setting-group">
+            <h2>外观</h2>
+            <div class="setting-row">
+              <label>主题</label>
+              <select id="theme">
+                <option value="dark">深色</option>
+                <option value="light">浅色</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="btn primary" id="btn-save-settings">保存设置</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

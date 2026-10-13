@@ -6,9 +6,17 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 
-# Tauri 桌面应用（M8 实现时启用）
-# [dependencies]
-# tauri = { version = "1", features = ["custom-protocol"] }
-# serde = { workspace = true }
-# serde_json = { workspace = true }
-# core-ipc = { path = "../core-ipc" }
+[[bin]]
+name = "audiosync-desktop"
+path = "src/main.rs"
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon", "devtools"] }
+tauri-plugin-shell = "2"
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+core-ipc = { path = "../core-ipc" }
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
