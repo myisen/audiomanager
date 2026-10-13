@@ -324,7 +324,10 @@ fn handle_client(stream: IpcStream, state: &Arc<Mutex<DaemonState>>) {
                 }
 
                 if is_shutdown {
-                    break;
+                    // 优雅关闭：响应已写出（IpcStream 无写缓冲），直接终止进程。
+                    // 不能只 break——那只会结束当前连接线程，主 accept 循环仍在运行。
+                    eprintln!("[audiosync] 收到关闭请求，守护进程退出");
+                    exit(0);
                 }
             }
             Err(_) => break,

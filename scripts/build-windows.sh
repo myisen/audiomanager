@@ -24,7 +24,8 @@ DIST_DIR="dist/windows"
 mkdir -p "$DIST_DIR/assets"
 
 cp "$BUILD_DIR/audiosync-desktop.exe" "$DIST_DIR/"
-cp "$BUILD_DIR/audiosync-daemon.exe" "$DIST_DIR/"
+# 构建产物名为 audiosync.exe，打包时重命名以区分桌面端
+cp "$BUILD_DIR/audiosync.exe" "$DIST_DIR/audiosync-daemon.exe"
 # WebView2Loader.dll：windows-gnu target 不静态链接 WebView2 加载器，
 # 必须随 exe 分发（版本须与 Cargo.lock 中 webview2-com-sys 一致）
 cp crates/app-desktop/packaging/WebView2Loader.dll "$DIST_DIR/"

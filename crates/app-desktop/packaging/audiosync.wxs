@@ -49,10 +49,10 @@
                            Type="string" />
           </Component>
 
-          <!-- 守护进程 -->
+          <!-- 守护进程（构建产物 audiosync.exe，安装为 audiosync-daemon.exe） -->
           <Component Id="DaemonExe" Guid="B2C3D4E5-F6A7-8901-BCDE-F12345678901">
             <File Id="AudiosyncDaemonExe" Name="audiosync-daemon.exe"
-                  Source="$(var.BuildDir)\audiosync-daemon.exe" />
+                  Source="$(var.BuildDir)\audiosync.exe" />
           </Component>
 
           <!-- WebView2 加载器（windows-gnu 构建不静态链接，必须随包分发） -->
