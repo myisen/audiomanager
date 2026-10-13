@@ -1,6 +1,8 @@
 // AudioSync Android 应用模块
 // T101–T106: JNI 绑定、SAF 适配、前台服务、界面、媒体控制、打包
 
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -9,6 +11,25 @@ plugins {
 android {
     namespace = "com.audiosync"
     compileSdk = 34
+
+    // 正式签名（T106/M11）：从 keystore/audiosync-release.properties 读取，
+    // 密钥与密码不进版本库（.gitignore 排除 app-android/keystore/）。
+    // CI/本地无密钥时自动回退为未签名 release。
+    signingConfigs {
+        create("release") {
+            val keystoreDir = rootProject.file("keystore")
+            val propsFile = keystoreDir.resolve("audiosync-release.properties")
+            if (propsFile.exists()) {
+                val props = Properties().apply {
+                    propsFile.inputStream().use { load(it) }
+                }
+                storeFile = keystoreDir.resolve(props.getProperty("storeFile"))
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "com.audiosync"
@@ -26,6 +47,9 @@ android {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (signingConfigs["release"].storeFile != null) {
+                signingConfig = signingConfigs["release"]
+            }
         }
     }
 
