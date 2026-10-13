@@ -3,6 +3,12 @@
 **/*.rs.bk
 *.pdb
 
+# Release artifacts (T112)
+/release/
+app-android/app/build/
+app-android/.gradle/
+app-android/local.properties
+
 # Editor
 .idea/
 .vscode/
