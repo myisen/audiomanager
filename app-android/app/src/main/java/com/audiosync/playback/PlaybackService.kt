@@ -10,6 +10,7 @@ import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.core.app.NotificationCompat
+import androidx.media.session.MediaButtonReceiver
 import com.audiosync.AudioSyncApp
 import com.audiosync.JniBridge
 import com.audiosync.R
@@ -68,6 +69,10 @@ class PlaybackService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
+            // T105: 耳机/media 按键（HeadsetButtonReceiver 转发）→ MediaSession 处理
+            Intent.ACTION_MEDIA_BUTTON -> {
+                androidx.media.session.MediaButtonReceiver.handleIntent(mediaSession, intent)
+            }
             ACTION_START -> {
                 startForeground(NOTIFICATION_ID, buildNotification())
                 updatePlaybackState(true)

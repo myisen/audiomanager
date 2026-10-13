@@ -74,7 +74,7 @@ class MainActivity : AppCompatActivity() {
             SafHelper.restoreAuthorizedTree(this)?.let { scanAuthorizedLibrary(it) }
                 ?: toast(getString(R.string.need_grant_first))
         }
-        findViewById<View>(R.id.playlist_list).setOnItemClickListener { _, _, pos, _ ->
+        findViewById<ListView>(R.id.playlist_list).setOnItemClickListener { _, _, pos, _ ->
             JniBridge.selectPlaylist(playlists[pos])
             refreshStatus()
         }

@@ -1,9 +1,11 @@
 package com.audiosync.saf
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
+import com.audiosync.JniBridge
 
 /**
  * T102: SAF 目录授权与库扫描适配
@@ -15,22 +17,21 @@ import androidx.documentfile.provider.DocumentFile
 object SafHelper {
 
     /** 发起目录授权选择；结果在 onActivityResult 中用 [onTreeGranted] 处理 */
-    fun openTreePickerIntent(): android.content.Intent =
-        android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+    fun openTreePickerIntent(): Intent =
+        Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
             addFlags(
-                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                        or android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
-                        or android.content.Intent.FLAG_GRANT_PREFIX_URI_PERMISSION
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
+                        Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
+                        Intent.FLAG_GRANT_PREFIX_URI_PERMISSION
             )
         }
 
     /** 处理授权结果：持久化权限并返回 tree Uri（取消授权返回 null） */
-    fun onTreeGranted(context: Context, resultCode: Int, data: android.content.Intent?): Uri? {
+    fun onTreeGranted(context: Context, resultCode: Int, data: Intent?): Uri? {
         val uri = data?.data ?: return null
-        val flags =
-            android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    or android.content.Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+        val flags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                Intent.FLAG_GRANT_WRITE_URI_PERMISSION
         try {
             context.contentResolver.takePersistableUriPermission(uri, flags)
         } catch (_: SecurityException) {
@@ -83,7 +84,7 @@ object SafHelper {
             } else {
                 val ext = file.name?.substringAfterLast('.', "")?.lowercase() ?: ""
                 if (ext in extensions) {
-                    results.add(file.name ?: file.uri.toString() to file.uri)
+                    results.add((file.name ?: file.uri.toString()) to file.uri)
                 }
             }
         }

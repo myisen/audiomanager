@@ -25,7 +25,7 @@ object JniBridge {
 
     // ===== 便捷封装（内部解析 JSON，供 UI 直接调用） =====
 
-    private fun request(json: String): org.json.JSONObject {
+    internal fun request(json: String): org.json.JSONObject {
         val resp = handleRequest(json)
         return org.json.JSONObject(resp)
     }
