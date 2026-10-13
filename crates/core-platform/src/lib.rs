@@ -6,9 +6,9 @@
 //! 在非 Windows 平台上提供空实现或模拟实现，保证跨平台编译。
 
 pub mod audio_output;
+pub mod autostart;
 pub mod firewall;
 pub mod paths;
-pub mod autostart;
 
 /// 当前平台名称
 pub fn platform_name() -> &'static str {

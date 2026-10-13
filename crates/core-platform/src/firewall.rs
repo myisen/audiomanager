@@ -43,6 +43,7 @@ pub fn try_add_exception(rule: &FirewallRule) -> Result<(), PlatformError> {
     #[cfg(not(target_os = "windows"))]
     {
         // 非 Windows 平台不需要防火墙例外
+        let _ = rule;
         Ok(())
     }
 }
@@ -75,14 +76,8 @@ pub fn generate_manual_commands(rule: &FirewallRule) -> Vec<String> {
     #[cfg(target_os = "linux")]
     {
         for port in &rule.ports {
-            commands.push(format!(
-                "sudo ufw allow {}/tcp",
-                port
-            ));
-            commands.push(format!(
-                "sudo ufw allow {}/udp",
-                port
-            ));
+            commands.push(format!("sudo ufw allow {}/tcp", port));
+            commands.push(format!("sudo ufw allow {}/udp", port));
         }
     }
 
@@ -108,6 +103,7 @@ pub fn check_exception_exists(rule: &FirewallRule) -> Result<bool, PlatformError
 
     #[cfg(not(target_os = "windows"))]
     {
+        let _ = rule;
         Ok(true)
     }
 }
@@ -127,9 +123,13 @@ fn add_firewall_rule_windows(rule: &FirewallRule) -> Result<(), PlatformError> {
     // 添加入站规则
     let result = Command::new("netsh")
         .args([
-            "advfirewall", "firewall", "add", "rule",
+            "advfirewall",
+            "firewall",
+            "add",
+            "rule",
             &format!("name={}", rule.name),
-            "dir=in", "action=allow",
+            "dir=in",
+            "action=allow",
             &format!("program={}", exe),
             "enable=yes",
         ])
@@ -156,7 +156,10 @@ fn check_firewall_rule_windows(rule: &FirewallRule) -> Result<bool, PlatformErro
 
     let result = Command::new("netsh")
         .args([
-            "advfirewall", "firewall", "show", "rule",
+            "advfirewall",
+            "firewall",
+            "show",
+            "rule",
             &format!("name={}", rule.name),
         ])
         .output();

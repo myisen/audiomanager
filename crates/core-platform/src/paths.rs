@@ -105,10 +105,11 @@ pub fn runtime_dir() -> PathBuf {
         if let Some(xdg) = std::env::var_os("XDG_RUNTIME_DIR") {
             return PathBuf::from(xdg).join("audiosync");
         }
-        std::env::temp_dir().join(format!("audiosync-{}", unsafe {
+        std::env::temp_dir().join(format!(
+            "audiosync-{}",
             // 不引入 libc，使用 UID 环境变量
             uid()
-        }))
+        ))
     }
 }
 
@@ -121,17 +122,12 @@ fn uid() -> u32 {
 }
 
 /// 判断路径是否为 UNC 路径（Windows 网络路径）
+///
+/// 跨平台检测：即使运行在非 Windows 上，也能识别来自
+/// Windows 清单文件中的 `\\server\share` 或 `//server/share` 形式路径。
 pub fn is_unc_path(path: &Path) -> bool {
     let s = path.to_string_lossy();
-    #[cfg(target_os = "windows")]
-    {
-        s.starts_with(r"\\") || s.starts_with("//")
-    }
-    #[cfg(not(target_os = "windows"))]
-    {
-        // 在非 Windows 上也可以检测 // 开头的路径
-        s.starts_with("//")
-    }
+    s.starts_with(r"\\") || s.starts_with("//")
 }
 
 /// 将路径转换为平台原生格式

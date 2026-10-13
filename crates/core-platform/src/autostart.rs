@@ -46,7 +46,7 @@ pub fn enable_autostart(config: &AutostartConfig) -> Result<(), PlatformError> {
 
     #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
     {
-        Err(PlatformError::Unsupported(platform::platform_name().into()))
+        Err(PlatformError::Unsupported(crate::platform_name().into()))
     }
 }
 
@@ -69,7 +69,7 @@ pub fn disable_autostart(config: &AutostartConfig) -> Result<(), PlatformError> 
 
     #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
     {
-        Err(PlatformError::Unsupported(platform::platform_name().into()))
+        Err(PlatformError::Unsupported(crate::platform_name().into()))
     }
 }
 
@@ -100,8 +100,8 @@ pub fn is_autostart_enabled(config: &AutostartConfig) -> Result<bool, PlatformEr
 
 #[cfg(target_os = "windows")]
 fn enable_autostart_windows(config: &AutostartConfig) -> Result<(), PlatformError> {
-    use windows::Win32::System::Registry::*;
     use windows::core::*;
+    use windows::Win32::System::Registry::*;
 
     let key_path = w!("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
 
@@ -131,8 +131,8 @@ fn enable_autostart_windows(config: &AutostartConfig) -> Result<(), PlatformErro
 
 #[cfg(target_os = "windows")]
 fn disable_autostart_windows(config: &AutostartConfig) -> Result<(), PlatformError> {
-    use windows::Win32::System::Registry::*;
     use windows::core::*;
+    use windows::Win32::System::Registry::*;
 
     let key_path = w!("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
     let app_name = HSTRING::from(&config.app_name);
@@ -147,8 +147,8 @@ fn disable_autostart_windows(config: &AutostartConfig) -> Result<(), PlatformErr
 
 #[cfg(target_os = "windows")]
 fn is_autostart_enabled_windows(config: &AutostartConfig) -> Result<bool, PlatformError> {
-    use windows::Win32::System::Registry::*;
     use windows::core::*;
+    use windows::Win32::System::Registry::*;
 
     let key_path = w!("Software\\Microsoft\\Windows\\CurrentVersion\\Run");
     let app_name = HSTRING::from(&config.app_name);
@@ -187,10 +187,8 @@ WantedBy=default.target
         config.args.join(" ")
     );
 
-    let dir = std::path::PathBuf::from(
-        std::env::var("HOME").unwrap_or_default(),
-    )
-    .join(".config/systemd/user");
+    let dir = std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default())
+        .join(".config/systemd/user");
 
     std::fs::create_dir_all(&dir)?;
     let path = dir.join(format!("{}.service", config.app_name.to_lowercase()));
@@ -200,11 +198,9 @@ WantedBy=default.target
 
 #[cfg(target_os = "linux")]
 fn disable_autostart_linux(config: &AutostartConfig) -> Result<(), PlatformError> {
-    let path = std::path::PathBuf::from(
-        std::env::var("HOME").unwrap_or_default(),
-    )
-    .join(".config/systemd/user")
-    .join(format!("{}.service", config.app_name.to_lowercase()));
+    let path = std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default())
+        .join(".config/systemd/user")
+        .join(format!("{}.service", config.app_name.to_lowercase()));
 
     if path.exists() {
         std::fs::remove_file(&path)?;
@@ -214,11 +210,9 @@ fn disable_autostart_linux(config: &AutostartConfig) -> Result<(), PlatformError
 
 #[cfg(target_os = "linux")]
 fn is_autostart_enabled_linux(config: &AutostartConfig) -> Result<bool, PlatformError> {
-    let path = std::path::PathBuf::from(
-        std::env::var("HOME").unwrap_or_default(),
-    )
-    .join(".config/systemd/user")
-    .join(format!("{}.service", config.app_name.to_lowercase()));
+    let path = std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default())
+        .join(".config/systemd/user")
+        .join(format!("{}.service", config.app_name.to_lowercase()));
 
     Ok(path.exists())
 }
@@ -252,10 +246,8 @@ fn enable_autostart_macos(config: &AutostartConfig) -> Result<(), PlatformError>
             .join("\n        ")
     );
 
-    let dir = std::path::PathBuf::from(
-        std::env::var("HOME").unwrap_or_default(),
-    )
-    .join("Library/LaunchAgents");
+    let dir = std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default())
+        .join("Library/LaunchAgents");
 
     std::fs::create_dir_all(&dir)?;
     let path = dir.join(format!("com.{}.plist", config.app_name.to_lowercase()));
@@ -265,11 +257,9 @@ fn enable_autostart_macos(config: &AutostartConfig) -> Result<(), PlatformError>
 
 #[cfg(target_os = "macos")]
 fn disable_autostart_macos(config: &AutostartConfig) -> Result<(), PlatformError> {
-    let path = std::path::PathBuf::from(
-        std::env::var("HOME").unwrap_or_default(),
-    )
-    .join("Library/LaunchAgents")
-    .join(format!("com.{}.plist", config.app_name.to_lowercase()));
+    let path = std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default())
+        .join("Library/LaunchAgents")
+        .join(format!("com.{}.plist", config.app_name.to_lowercase()));
 
     if path.exists() {
         std::fs::remove_file(&path)?;
@@ -279,22 +269,11 @@ fn disable_autostart_macos(config: &AutostartConfig) -> Result<(), PlatformError
 
 #[cfg(target_os = "macos")]
 fn is_autostart_enabled_macos(config: &AutostartConfig) -> Result<bool, PlatformError> {
-    let path = std::path::PathBuf::from(
-        std::env::var("HOME").unwrap_or_default(),
-    )
-    .join("Library/LaunchAgents")
-    .join(format!("com.{}.plist", config.app_name.to_lowercase()));
+    let path = std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default())
+        .join("Library/LaunchAgents")
+        .join(format!("com.{}.plist", config.app_name.to_lowercase()));
 
     Ok(path.exists())
-}
-
-// ===== 模拟实现（用于非 Windows 测试） =====
-
-#[cfg(not(target_os = "windows"))]
-mod platform {
-    pub fn platform_name() -> &'static str {
-        crate::platform_name()
-    }
 }
 
 #[cfg(test)]
