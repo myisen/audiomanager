@@ -51,8 +51,14 @@
 
           <!-- 守护进程 -->
           <Component Id="DaemonExe" Guid="B2C3D4E5-F6A7-8901-BCDE-F12345678901">
-            <File Id="AudiosyncDaemonExe" Name="audiosync.exe"
-                  Source="$(var.BuildDir)\audiosync.exe" />
+            <File Id="AudiosyncDaemonExe" Name="audiosync-daemon.exe"
+                  Source="$(var.BuildDir)\audiosync-daemon.exe" />
+          </Component>
+
+          <!-- WebView2 加载器（windows-gnu 构建不静态链接，必须随包分发） -->
+          <Component Id="WebView2Loader" Guid="C1D2E3F4-A5B6-4789-8ABC-DEF012345678">
+            <File Id="WebView2LoaderDll" Name="WebView2Loader.dll"
+                  Source="$(var.BuildDir)\WebView2Loader.dll" />
           </Component>
 
           <!-- 前端资源 -->
@@ -117,6 +123,7 @@
     <Feature Id="Complete" Title="AudioSync" Level="1">
       <ComponentRef Id="MainExecutable" />
       <ComponentRef Id="DaemonExe" />
+      <ComponentRef Id="WebView2Loader" />
       <ComponentRef Id="WebAssetsComp" />
       <ComponentRef Id="FirewallRules" />
       <ComponentRef Id="StartMenuShortcut" />

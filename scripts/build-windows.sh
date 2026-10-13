@@ -24,7 +24,10 @@ DIST_DIR="dist/windows"
 mkdir -p "$DIST_DIR/assets"
 
 cp "$BUILD_DIR/audiosync-desktop.exe" "$DIST_DIR/"
-cp "$BUILD_DIR/audiosync.exe" "$DIST_DIR/"
+cp "$BUILD_DIR/audiosync-daemon.exe" "$DIST_DIR/"
+# WebView2Loader.dll：windows-gnu target 不静态链接 WebView2 加载器，
+# 必须随 exe 分发（版本须与 Cargo.lock 中 webview2-com-sys 一致）
+cp crates/app-desktop/packaging/WebView2Loader.dll "$DIST_DIR/"
 cp -r dist/index.html dist/style.css dist/app.js "$DIST_DIR/assets/"
 cp crates/app-desktop/packaging/add-firewall-rules.ps1 "$DIST_DIR/"
 cp crates/app-desktop/icons/icon.ico "$DIST_DIR/"
