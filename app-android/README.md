@@ -35,6 +35,26 @@ app-android/
 cd app-android && ./gradlew assembleRelease bundleRelease
 ```
 
+## 正式签名
+
+- 密钥：`app-android/keystore/audiosync-release.jks`（RSA 2048，有效期 30 年），
+  密码配置在同级 `audiosync-release.properties`。**两者均被 .gitignore 排除，绝不入库。**
+- Gradle 自动检测：`keystore/` 目录存在则 `assembleRelease`/`bundleRelease`
+  直接产出签名产物；缺失时回退为未签名 release（CI 友好）。
+- 备份要求：密钥丢失将无法为同一 `applicationId` 发布更新。请至少两份
+  独立备份（密码管理器/加密介质），并记录证书 SHA-256 指纹：
+  `dc799a17dfe29c205042ff89c484c266cb3f633053cb361d929beb5b2beddf48`
+- 重新生成（仅首次或彻底轮换时）：
+
+  ```bash
+  keytool -genkeypair -v -keystore app-android/keystore/audiosync-release.jks \
+    -alias audiosync -keyalg RSA -keysize 2048 -validity 10950 \
+    -dname "CN=AudioSync Release, OU=Mobile, O=AudioSync"
+  # 再手工创建 keystore/audiosync-release.properties：
+  # storeFile=audiosync-release.jks
+  # storePassword=<随机密码>  keyAlias=audiosync  keyPassword=<同密码>
+  ```
+
 ## 设计要点
 
 - **协议复用**：Kotlin 通过 JSON 请求/响应与 Rust 核心通信，复用 `core-ipc`
