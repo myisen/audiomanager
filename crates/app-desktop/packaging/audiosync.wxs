@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  AudioSync Windows Installer (WiX)
+  T93: Windows 打包与发行物
+  使用 WiX Toolset 3.x 编译生成 MSI 安装包
+
+  构建命令:
+    candle audiosync.wxs -o audiosync.wixobj
+    light audiosync.wixobj -o audiosync.msi -ext WixUIExtension
+-->
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Product Id="*"
+           Name="AudioSync"
+           Language="2052"
+           Version="0.1.0.0"
+           Manufacturer="AudioSync Project"
+           UpgradeCode="7B3A5F2E-1C8D-4E6B-9A0F-3D5C7E8B1A24">
+
+    <Package Id="*"
+             Keywords="Installer"
+             Description="AudioSync 本地音乐互传播放器"
+             Manufacturer="AudioSync Project"
+             InstallerVersion="500"
+             Languages="2052"
+             Compressed="yes"
+             SummaryCodepage="1252" />
+
+    <!-- 安装条件: Windows 10 1903+ -->
+    <Condition Message="需要 Windows 10 1903 或更高版本">
+      <![CDATA[(VersionNT64 AND ServicePackLevel >= 0)]]>
+    </Condition>
+
+    <Media Id="1" Cabinet="audiosync.cab" EmbedCab="yes" />
+
+    <!-- 安装目录结构 -->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder" Name="PFiles">
+        <Directory Id="INSTALLDIR" Name="AudioSync">
+          <!-- 主程序 -->
+          <Component Id="MainExecutable" Guid="A1B2C3D4-E5F6-7890-ABCD-EF1234567890">
+            <File Id="AudiosyncExe" Name="audiosync-desktop.exe"
+                  Source="$(var.BuildDir)\audiosync-desktop.exe" KeyPath="yes" />
+            <!-- T91: 注册表自启动 -->
+            <RegistryValue Id="AutostartEntry"
+                           Root="HKCU"
+                           Key="Software\Microsoft\Windows\CurrentVersion\Run"
+                           Name="AudioSync"
+                           Value="[INSTALLDIR]audiosync-desktop.exe"
+                           Type="string" />
+          </Component>
+
+          <!-- 守护进程 -->
+          <Component Id="DaemonExe" Guid="B2C3D4E5-F6A7-8901-BCDE-F12345678901">
+            <File Id="AudiosyncDaemonExe" Name="audiosync.exe"
+                  Source="$(var.BuildDir)\audiosync.exe" />
+          </Component>
+
+          <!-- 前端资源 -->
+          <Directory Id="WebAssets" Name="assets">
+            <Component Id="WebAssetsComp" Guid="C3D4E5F6-A7B8-9012-CDEF-123456789012">
+              <File Id="IndexHtml" Name="index.html" Source="$(var.BuildDir)\assets\index.html" />
+              <File Id="StyleCss" Name="style.css" Source="$(var.BuildDir)\assets\style.css" />
+              <File Id="AppJs" Name="app.js" Source="$(var.BuildDir)\assets\app.js" />
+            </Component>
+          </Directory>
+
+          <!-- T92: 防火墙规则 -->
+          <Component Id="FirewallRules" Guid="D4E5F6A7-B8C9-0123-DEFA-234567890123">
+            <File Id="FirewallScript" Name="add-firewall-rules.ps1"
+                  Source="$(var.BuildDir)\add-firewall-rules.ps1" />
+          </Component>
+        </Directory>
+      </Directory>
+
+      <!-- 开始菜单快捷方式 -->
+      <Directory Id="ProgramMenuFolder" Name="Programs">
+        <Directory Id="StartMenuDir" Name="AudioSync">
+          <Component Id="StartMenuShortcut" Guid="E5F6A7B8-C9D0-1234-EFAB-345678901234">
+            <Shortcut Id="StartMenuLnk"
+                      Name="AudioSync"
+                      Target="[INSTALLDIR]audiosync-desktop.exe"
+                      WorkingDirectory="INSTALLDIR"
+                      Icon="audiosync.ico" />
+            <RegistryValue Root="HKCU"
+                           Key="Software\AudioSync"
+                           Name="StartMenuShortcut"
+                           Value="1"
+                           Type="integer"
+                           KeyPath="yes" />
+          </Component>
+        </Directory>
+      </Directory>
+
+      <!-- 桌面快捷方式（可选） -->
+      <Directory Id="DesktopFolder" Name="Desktop">
+        <Component Id="DesktopShortcut" Guid="F6A7B8C9-D0E1-2345-FABC-456789012345">
+          <Shortcut Id="DesktopLnk"
+                    Name="AudioSync"
+                    Target="[INSTALLDIR]audiosync-desktop.exe"
+                    WorkingDirectory="INSTALLDIR"
+                    Icon="audiosync.ico" />
+          <RegistryValue Root="HKCU"
+                         Key="Software\AudioSync"
+                         Name="DesktopShortcut"
+                         Value="1"
+                         Type="integer"
+                         KeyPath="yes" />
+        </Component>
+      </Directory>
+    </Directory>
+
+    <!-- 图标 -->
+    <Icon Id="audiosync.ico" SourceFile="$(var.BuildDir)\audiosync.ico" />
+    <Property Id="ARPPRODUCTICON" Value="audiosync.ico" />
+
+    <!-- 安装特性 -->
+    <Feature Id="Complete" Title="AudioSync" Level="1">
+      <ComponentRef Id="MainExecutable" />
+      <ComponentRef Id="DaemonExe" />
+      <ComponentRef Id="WebAssetsComp" />
+      <ComponentRef Id="FirewallRules" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <Feature Id="DesktopShortcutFeature" Title="创建桌面快捷方式" Level="1">
+        <ComponentRef Id="DesktopShortcut" />
+      </Feature>
+    </Feature>
+
+    <!-- 安装后执行防火墙脚本 -->
+    <CustomAction Id="AddFirewallRules"
+                  Directory="INSTALLDIR"
+                  ExeCommand='powershell -ExecutionPolicy Bypass -File "[INSTALLDIR]add-firewall-rules.ps1"'
+                  Return="check" />
+
+    <InstallExecuteSequence>
+      <Custom Action="AddFirewallRules" After="InstallFiles">NOT Installed</Custom>
+    </InstallExecuteSequence>
+
+    <!-- UI -->
+    <UI>
+      <UIRef Id="WixUI_InstallDir" />
+      <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR" />
+      <UIRef Id="WixUI_ErrorProgressText" />
+    </UI>
+
+    <!-- 卸载时清理自启动 -->
+    <CustomAction Id="RemoveAutostart"
+                  Directory="INSTALLDIR"
+                  ExeCommand='reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v AudioSync /f'
+                  Return="ignore" />
+
+    <!-- 许可证 -->
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.LicenseFile)" />
+  </Product>
+</Wix>

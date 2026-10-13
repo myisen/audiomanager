@@ -13,6 +13,7 @@ members = [
     "crates/core-share",
     "crates/core-config",
     "crates/core-ipc",
+    "crates/core-platform",
     "crates/app-daemon",
     "crates/app-desktop",
 ]
