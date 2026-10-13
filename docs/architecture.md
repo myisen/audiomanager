@@ -7,7 +7,7 @@
 | 层 | 包含 crate | 约束 |
 |---|---|---|
 | L0 核心层 | `core-store`, `core-library`, `core-playlist`, `core-player`, `core-position`, `core-cast`, `core-transfer`, `core-metadata`, `core-share`, `core-config`, `core-log`, `core-platform` | 平台无关，三端共享；不得依赖 L1/L2 |
-| L1 控制层 | `core-ipc`, `app-daemon` | 依赖 L0；不得依赖 L2 |
+| L1 控制层 | `core-ipc`, `core-jni`, `app-daemon` | 依赖 L0；不得依赖 L2 |
 | L2 界面层 | `app-desktop`, `app-android` | 依赖 L0/L1；仅做展示与交互，业务逻辑下沉到 L0 |
 
 ## 依赖规则
@@ -40,6 +40,7 @@
 | `core-ipc` | 控制通道协议 | FR-08 |
 | `core-log` | 结构化日志与隐私约束 | FR-09, 7.6 |
 | `core-platform` | 平台适配：音频输出 trait、路径处理、自启动、防火墙例外 | M9（T91/T92） |
+| `core-jni` | Android JNI 绑定：JSON 协议复用 core-ipc，逻辑与 JVM 解耦 | M10（T101） |
 | `app-daemon` | Linux 无头服务可执行体 | FR-08 |
 | `app-desktop` | Tauri 桌面可执行体 | FR-03/FR-09 等 |
 | `app-android` | Android 壳（Kotlin + JNI） | 平台适配 |

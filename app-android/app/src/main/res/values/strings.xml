@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AudioSync</string>
+
+    <!-- 通知渠道 -->
+    <string name="channel_playback">播放</string>
+    <string name="channel_transfer">传输</string>
+    <string name="playback_notification_text">正在播放</string>
+    <string name="transfer_notification_text">正在传输文件</string>
+
+    <!-- 界面 -->
+    <string name="section_library">音乐库</string>
+    <string name="section_player">播放器</string>
+    <string name="section_transfer">设备与传输</string>
+    <string name="btn_grant_library">授权音频库目录</string>
+    <string name="btn_rescan">重新扫描</string>
+    <string name="btn_play">▶</string>
+    <string name="btn_next">⏭</string>
+    <string name="btn_prev">⏮</string>
+    <string name="btn_start_transfer">开始传输</string>
+    <string name="empty_playlists">暂无清单，请先授权音频库目录</string>
+    <string name="no_track">未选择曲目</string>
+    <string name="transfer_summary">传输任务：%1$d 个</string>
+    <string name="transfer_summary_zero">传输任务：0 个</string>
+
+    <!-- SAF（T102） -->
+    <string name="saf_title">授权音频库</string>
+    <string name="saf_message">AudioSync 需要“所有文件访问授权”来读取您选择的音乐目录。选择目录后仅在本地扫描，不上传任何内容。</string>
+    <string name="saf_grant">选择目录</string>
+    <string name="saf_later">稍后</string>
+    <string name="saf_denied">未获得目录授权</string>
+    <string name="need_grant_first">请先授权音频库目录</string>
+    <string name="library_unavailable">音频库目录不可访问，已标记失效</string>
+    <string name="scan_done">扫描完成：%1$d 个音频文件</string>
+</resources>

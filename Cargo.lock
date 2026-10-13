@@ -446,6 +446,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "core-jni"
+version = "0.1.0"
+dependencies = [
+ "core-ipc",
+ "jni",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "core-library"
 version = "0.1.0"
 dependencies = [

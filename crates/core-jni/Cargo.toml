@@ -1,0 +1,19 @@
+[package]
+name = "core-jni"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[lib]
+name = "audiosync_core"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+core-ipc = { path = "../core-ipc" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+jni = "0.21"
+
+[dev-dependencies]

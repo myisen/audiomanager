@@ -14,6 +14,7 @@ members = [
     "crates/core-config",
     "crates/core-ipc",
     "crates/core-platform",
+    "crates/core-jni",
     "crates/app-daemon",
     "crates/app-desktop",
 ]
