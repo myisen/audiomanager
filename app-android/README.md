@@ -43,7 +43,9 @@ cd app-android && ./gradlew assembleRelease bundleRelease
   直接产出签名产物；缺失时回退为未签名 release（CI 友好）。
 - 备份要求：密钥丢失将无法为同一 `applicationId` 发布更新。请至少两份
   独立备份（密码管理器/加密介质），并记录证书 SHA-256 指纹：
-  `dc799a17dfe29c205042ff89c484c266cb3f633053cb361d929beb5b2beddf48`
+  `e2184e300f880114c56441d927eb0053f9634f763db2602a70889fd44984ede5`
+  （本地已有加密备份：`backups/audiosync-keystore-20261013.tar.gz.enc`，
+  解密：`openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in <文件> -out ks.tar.gz`）
 - 重新生成（仅首次或彻底轮换时）：
 
   ```bash
