@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=AudioSync
+GenericName=Music Player
+Comment=本地音乐互传播放器
+Comment[en]=Local music sharing player
+Exec=audiosync-desktop
+Icon=audiosync
+Terminal=false
+Categories=AudioVideo;Audio;Music;Player;
+Keywords=music;player;audio;音乐;播放器;
+StartupWMClass=AudioSync
