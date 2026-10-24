@@ -1,0 +1,34 @@
+[Unit]
+Description=AudioSync 本地音乐互传播放器守护进程
+Documentation=file:///workspace/docs/audio-manager-prd.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/audiosync daemon
+Restart=on-failure
+RestartSec=5s
+
+# T75: 最小权限与非 root 运行
+# 以当前用户运行，不使用 root
+User=%i
+Group=%i
+
+# 安全加固
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=%h/.local/share/audiosync %h/.config/audiosync
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+
+# 环境变量
+Environment=RUST_LOG=info
+Environment=XDG_RUNTIME_DIR=/run/user/%U
+
+[Install]
+WantedBy=default.target
