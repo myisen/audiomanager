@@ -48,7 +48,7 @@ install -Dpm 644 audiosync.png \
 
 %files
 %license LICENSE
-%doc docs/third-party-licenses.md
+%doc docs/third-party-licenses.md docs/rpm-guide.md
 %{_bindir}/audiosync
 %{_bindir}/audiosync-desktop
 %{_userunitdir}/audiosync.service

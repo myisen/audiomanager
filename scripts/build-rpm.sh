@@ -26,6 +26,7 @@ cp crates/app-desktop/packaging/rpm/audiosync.desktop "$STAGE/"
 cp crates/app-desktop/icons/256x256.png "$STAGE/audiosync.png"
 cp LICENSE "$STAGE/"
 cp docs/third-party-licenses.md "$STAGE/docs/"
+cp docs/rpm-guide.md "$STAGE/docs/"
 
 tar czf "$TOP/SOURCES/audiosync-$VERSION-linux-x86_64.tar.gz" -C "$TOP/staging" "audiosync-$VERSION"
 cp crates/app-desktop/packaging/rpm/audiosync.spec "$TOP/SPECS/"
